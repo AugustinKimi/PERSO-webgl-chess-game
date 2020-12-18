@@ -10,6 +10,36 @@
     <!-- <script src="three.min.js" ></script> -->
     <!-- <script type="module" src="GLTFLoader.js" ></script> -->
     <script type="module" src="script.js" ></script>
-    
+    <script type="x-shader/x-vertex" id="vertexshader">
+
+        function vertexShader() {
+            return `
+              varying vec3 vUv; 
+          
+              void main() {
+                vUv = position; 
+          
+                vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
+                gl_Position = projectionMatrix * modelViewPosition; 
+              }
+            `
+          }
+
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragmentshader">
+
+        return `
+        uniform vec3 colorA; 
+        uniform vec3 colorB; 
+        varying vec3 vUv;
+  
+        void main() {
+          gl_FragColor = vec4(mix(colorA, colorB, vUv.z), 1.0);
+        }
+    `
+  }
+
+    </script>
 </body>
 </html>

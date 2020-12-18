@@ -21,6 +21,36 @@ camera.position.x  = 0
 camera.rotation.x = - Math.PI/4
 camera.rotation.y = 0
 
+// test
+
+const geometry = new THREE.CylinderBufferGeometry( 0.1, 0.5, 4, 32 );
+const material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
+const cylinder = new THREE.Mesh( geometry, material );
+scene.add( cylinder );
+
+let uniforms = {
+	colorB: {type: 'vec3', value: new THREE.Color(0xACB6E5)},
+	colorA: {type: 'vec3', value: new THREE.Color(0x74ebd5)}
+}
+
+let material =  new THREE.ShaderMaterial({
+uniforms: uniforms,
+fragmentShader: fragmentShader(),
+vertexShader: vertexShader(),
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -170,8 +200,22 @@ const loader = new GLTFLoader();
 
 const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 {
+	const pieceMaterial = new THREE.MeshPhysicalMaterial( {
+		color: pieceCodeColor,
+		metalness: 0,
+		roughness: 0,
+		alphaTest: 0.5,
+		envMap: texture,
+		envMapIntensity: 1,
+		depthWrite: false,
+		clearcoat : 0.4 ,
+		transmission: 0.2, // use material.transmission for glass materials
+		opacity: 1, // set material.opacity to 1 when material.transmission is non-zero
+		transparent: true
+	} )
 	// PAWN
 	let pawnPosZ
+
 	if(posZ == 0 )
 	{
 		pawnPosZ = 1
@@ -197,7 +241,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 				piece : 'pawn',
 				type : 'piece'
 			}
-			pawn.material = new THREE.MeshPhongMaterial({color : pieceCodeColor})
+			pawn.material = pieceMaterial
 			pawn.position.x = x
 			pawn.position.y = 1 + size.y/2 - 0.49
 			pawn.position.z = pawnPosZ,
@@ -226,7 +270,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 			piece : 'rook',
 			type : 'piece'
 		}
-		leftRook.material = new THREE.MeshPhongMaterial({color : pieceCodeColor})
+		leftRook.material = pieceMaterial
 		leftRook.position.x = 0
 		leftRook.position.y = 1 + size.y/2 - 0.49
 		leftRook.position.z = posZ
@@ -250,7 +294,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 			piece : 'rook',
 			type : 'piece'
 		}
-		rightRook.material = new THREE.MeshPhongMaterial({color : pieceCodeColor})
+		rightRook.material = pieceMaterial
 		rightRook.position.x = 7
 		rightRook.position.y = 1 + size.y/2 - 0.49
 		rightRook.position.z = posZ
@@ -278,7 +322,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 			piece : 'knight',
 			type : 'piece'
 		}
-		leftKnight.material = new THREE.MeshPhongMaterial({color : pieceCodeColor})
+		leftKnight.material = pieceMaterial
 		leftKnight.position.x = 1
 		leftKnight.position.y =  1 + size.y/2 - 0.49
 		leftKnight.position.z = posZ
@@ -306,7 +350,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 			piece : 'knight',
 			type : 'piece'
 		}
-		rightKnight.material = new THREE.MeshPhongMaterial({color : pieceCodeColor})
+		rightKnight.material = pieceMaterial
 		rightKnight.position.x = 6
 		rightKnight.position.y = 1 + size.y/2 - 0.49
 		rightKnight.position.z = posZ
@@ -336,7 +380,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 			piece : 'bishop',
 			type : 'piece'
 		}
-		leftBishop.material = new THREE.MeshPhongMaterial({color : pieceCodeColor})
+		leftBishop.material = pieceMaterial
 		leftBishop.position.x = 2
 		leftBishop.position.y = 1 + size.y/2 - 0.49
 		leftBishop.position.z = posZ
@@ -363,7 +407,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 			piece : 'bishop',
 			type : 'piece'
 		}
-		rightBishop.material = new THREE.MeshPhongMaterial({color : pieceCodeColor})
+		rightBishop.material = pieceMaterial
 		rightBishop.position.x = 5
 		rightBishop.position.y = 1 + size.y/2 - 0.49
 		rightBishop.position.z = posZ
@@ -391,7 +435,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 	// 		piece : 'king',
 	// 		type : 'piece'
 	// 	}
-	// 	king.material = new THREE.MeshPhongMaterial({color : pieceCodeColor})
+	// 	king.material = pieceMaterial
 	// 	king.position.x = 3
 	// 	king.position.y = 1 + size.y/2 - 0.49
 	// 	king.position.z = posZ
@@ -403,8 +447,8 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 	// })
 
 	const kingGeometry = new THREE.CylinderGeometry(0.4,0.4,1)
-	const kingmMaterial = new THREE.MeshPhongMaterial({color : pieceCodeColor})
-	const king = new THREE.Mesh(kingGeometry, kingmMaterial)
+	const kingMaterial = pieceMaterial
+	const king = new THREE.Mesh(kingGeometry, kingMaterial)
 	king.userData = {
 		posX : 3,
 		posZ : posZ,
@@ -440,7 +484,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 			piece : 'queen',
 			type : 'piece'
 		}
-		queen.material = new THREE.MeshPhongMaterial({color : pieceCodeColor})
+		queen.material = pieceMaterial
 		queen.position.x = 4
 		queen.position.y = 1 + size.y/2 - 0.49
 		queen.position.z = posZ
