@@ -4,4 +4,26 @@ body{
 
 canvas{
     display: block;
+    outline: none;
 }
+
+.container{
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: #000000;
+    width: 100vw;
+    height: 100vh;
+    font-size: 20px;
+    text-transform: uppercase;
+    color: #ffffff;
+    display: flex;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    font-family: Arial, Helvetica, sans-serif;
+    opacity: 1;
+    transition: all 0.4s linear;
+}
+
+

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,39 +7,9 @@
     <link rel="stylesheet" href="main.css">
 </head>
 <body>
-    <!-- <script src="three.min.js" ></script> -->
-    <!-- <script type="module" src="GLTFLoader.js" ></script> -->
-    <script type="module" src="script.js" ></script>
-    <script type="x-shader/x-vertex" id="vertexshader">
-
-        function vertexShader() {
-            return `
-              varying vec3 vUv; 
-          
-              void main() {
-                vUv = position; 
-          
-                vec4 modelViewPosition = modelViewMatrix * vec4(position, 1.0);
-                gl_Position = projectionMatrix * modelViewPosition; 
-              }
-            `
-          }
-
-    </script>
-
-    <script type="x-shader/x-fragment" id="fragmentshader">
-
-        return `
-        uniform vec3 colorA; 
-        uniform vec3 colorB; 
-        varying vec3 vUv;
-  
-        void main() {
-          gl_FragColor = vec4(mix(colorA, colorB, vUv.z), 1.0);
-        }
-    `
-  }
-
-    </script>
+    <div class="container">
+        <h1 class='button'>Play a game</h1>
+    </div>
+    <script type="module" src="script_2.js" ></script>
 </body>
 </html>

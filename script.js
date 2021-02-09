@@ -4,40 +4,115 @@ import { GLTFLoader } from './node_modules/three/examples/jsm/loaders/GLTFLoader
 
 import { OrbitControls } from './node_modules/three/examples/jsm/controls/OrbitControls.js'
 
+import {VerticalBlurShader} from './node_modules/three/examples/jsm/shaders/VerticalBlurShader.js'
 
 import gsap from "./node_modules/gsap/all.js"
-import { Timeline } from './node_modules/gsap/src/gsap-core.js'
 
+
+
+// SCENE INTIALISATION
 
 const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x444444)
-// scene.fog = new THREE.Fog({color : 0xff0000, near : 10 , far : 50})
 
-
+// SET OUR CAMERA 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 1 , 1000)
 camera.position.y  = 6
 camera.position.z  = 5
 camera.position.x  = 0
 camera.rotation.x = - Math.PI/4
 camera.rotation.y = 0
+camera.lookAt(0, 0, 0 )
 
-// test
 
-const geometry = new THREE.CylinderBufferGeometry( 0.1, 0.5, 4, 32 );
-const material = new THREE.MeshBasicMaterial( {color: 0xffff00} );
-const cylinder = new THREE.Mesh( geometry, material );
-scene.add( cylinder );
 
-let uniforms = {
-	colorB: {type: 'vec3', value: new THREE.Color(0xACB6E5)},
-	colorA: {type: 'vec3', value: new THREE.Color(0x74ebd5)}
+
+// SHADESR MATERIALS TESTS (for the aura above selected pieces and checked king)
+
+
+
+
+// SHADERS TRY
+
+
+
+const _VS = `
+
+attribute float vertexDisplacement;
+uniform float delta;
+varying float vOpacity;
+varying vec3 vUv;
+
+void main() {
+	vUv = position;
+	vOpacity = vertexDisplacement;
+
+	vec3 p = position ;
+
+	// p.x += sin(vertexDisplacement);
+	p.y += cos(vertexDisplacement);
+
+
+
+	vec4 modelViewPosition = modelViewMatrix * vec4(p, 1.0);
+  	gl_Position = projectionMatrix * modelViewPosition;
+}
+`
+
+const _FS = `
+uniform float delta;
+varying float vOpacity;
+varying vec3 vUv;
+
+void main() {
+	float r = 1.0 + cos(vUv.x * delta);
+	float g = 1.0 + sin(delta) * 0.5;
+	float b = 0.0;
+
+
+	gl_FragColor = vec4(r, g , b, vOpacity);
 }
 
-let material =  new THREE.ShaderMaterial({
-uniforms: uniforms,
-fragmentShader: fragmentShader(),
-vertexShader: vertexShader(),
-})
+`
+
+let uniforms = {
+	delta : {value : 0}
+}
+
+
+// ******************
+
+const geometry = new THREE.CylinderBufferGeometry( 0.5, 0.5, 1, 64)
+const shaderMaterial = new THREE.ShaderMaterial( {
+	uniforms : uniforms,
+	vertexShader: _VS,
+	fragmentShader: _FS,
+	
+	// vertexShader: vertexShader(),
+	// fragmentShader: fragmentShader(),
+} )
+
+const vertexDisplacement = new Float32Array(geometry.attributes.position.count)
+for(let i = 0; i < vertexDisplacement.length; i+= 1)
+{
+	 vertexDisplacement[i] = Math.sin(i)
+}
+
+geometry.addAttribute('vertexDisplacement', new THREE.BufferAttribute(vertexDisplacement, 1))
+const normalMaterial = new THREE.MeshLambertMaterial({color : 0xff00ff})
+
+
+let cylinder = new THREE.Mesh( geometry, shaderMaterial )
+cylinder.position.set(0,15,0)
+// scene.add( cylinder )
+
+
+// ********************
+
+console.log(cylinder)
+
+
+// ********************
 
 
 
@@ -47,13 +122,7 @@ vertexShader: vertexShader(),
 
 
 
-
-
-
-
-
-
-
+// CREATE THEE RENDERER
 
 const renderer = new THREE.WebGLRenderer()
 renderer.shadowMap.enabled = true
@@ -61,61 +130,68 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 document.body.appendChild(renderer.domElement)
 
 
-// const ambientLight = new THREE.AmbientLight(0xffffff, 1)
-// scene.add(ambientLight)
 
 
-// SPOTLIGHT 2
+// SET SPOTLIGHT TO MAKE GET LIGHTS ONLY ON THE CHESS PLATE
 
 
-const spotLight = new THREE.SpotLight( 0xffffff, 1 )
-spotLight.position.set( 20, 15,  -15)
-spotLight.intensity = 0.8
-spotLight.angle = 0.4
-spotLight.penumbra = 0.6
-spotLight.decay = 2
-spotLight.distance = 200
-
-spotLight.castShadow = true
-spotLight.shadow.mapSize.width = 512
-spotLight.shadow.mapSize.height = 512
-spotLight.shadow.camera.near = 2
-spotLight.shadow.camera.far = 200
-spotLight.shadow.focus = 1
-scene.add( spotLight )
-
-// const lightHelper = new THREE.SpotLightHelper( spotLight )
-// scene.add(lightHelper)
-
+// ********************
 
 // SPOTLIGHT 2
 
 
-const spotLight2 = new THREE.SpotLight( 0xffffff, 1 )
-spotLight2.position.set( -20, 15,  15)
-spotLight2.intensity = 0.8
-spotLight2.angle = 0.4
-spotLight2.penumbra = 0.6
-spotLight2.decay = 2
-spotLight2.distance = 200
+// const spotLight = new THREE.SpotLight( 0xffffff, 1 )
+// spotLight.position.set( 20, 15,  -15)
+// spotLight.intensity = 0.8
+// spotLight.angle = 0.4
+// spotLight.penumbra = 0.6
+// spotLight.decay = 2
+// spotLight.distance = 200
 
-spotLight2.castShadow = true
-spotLight2.shadow.mapSize.width = 512
-spotLight2.shadow.mapSize.height = 512
-spotLight2.shadow.camera.near = 2
-spotLight2.shadow.camera.far = 200
-spotLight2.shadow.focus = 1
-scene.add( spotLight2 )
+// spotLight.castShadow = true
+// spotLight.shadow.mapSize.width = 512
+// spotLight.shadow.mapSize.height = 512
+// spotLight.shadow.camera.near = 2
+// spotLight.shadow.camera.far = 200
+// spotLight.shadow.focus = 1
+// scene.add( spotLight )
+
+// // const lightHelper = new THREE.SpotLightHelper( spotLight )
+// // scene.add(lightHelper)
+
+
+// // SPOTLIGHT 2
+
+
+// const spotLight2 = new THREE.SpotLight( 0xffffff, 1 )
+// spotLight2.position.set( -20, 15,  15)
+// spotLight2.intensity = 1
+// spotLight2.angle = 0.4
+// spotLight2.penumbra = 0.6
+// spotLight2.decay = 2
+// spotLight2.distance = 200
+
+// spotLight2.castShadow = true
+// spotLight2.shadow.mapSize.width = 512
+// spotLight2.shadow.mapSize.height = 512
+// spotLight2.shadow.camera.near = 2
+// spotLight2.shadow.camera.far = 200
+// spotLight2.shadow.focus = 1
+// scene.add( spotLight2 )
 
 // const lightHelper2 = new THREE.SpotLightHelper( spotLight2 )
 // scene.add( lightHelper2 )
+
+// ********************
+
+
 
 // SPOTLIGHT 3
 
 
 const spotLight3 = new THREE.SpotLight( 0xffffff, 1 )
 spotLight3.position.set( 0, 25,  0)
-spotLight3.intensity = 0.8
+spotLight3.intensity = 1.5
 spotLight3.angle = 0.6
 spotLight3.penumbra = 0.6
 spotLight3.decay = 2
@@ -133,7 +209,7 @@ scene.add( spotLight3 )
 // scene.add( lightHelper3 )
 
 
-// CREATING THE ROOM
+// CREATING THE ROOM, need to be update to make a real ambient instead of just a chess plate on the ground
 
 const texture = new THREE.TextureLoader().load( 'ground_texture.jpg' );
 const cubeSize = 60
@@ -146,11 +222,16 @@ room.material.receiveShadow = true
 room.position.y = cubeSize/2 -0.5
 
 scene.add(room)
+
+
+
 //  CREATING THE CHESS PLATE
 const pieceStock = []
 const chessGroup = new THREE.Group()
 chessGroup.name = 'Chess Group'
 
+
+// 2 LOOPS, ONE TO MAKE X AXE AND THE OTHER ONE TO MAKE THE Z AXE
 for(let x = 0; x <8 ; x++)
 {
 	for(let z = 0; z < 8; z++)
@@ -158,6 +239,8 @@ for(let x = 0; x <8 ; x++)
 		const caseGeo = new THREE.BoxGeometry(1, 1, 1)
 		const material = new THREE.MeshLambertMaterial()
 		let caseColor = 0x313131
+
+		// Make the case the right color depending of it position
 		if(x%2 == 0 && z%2 == 0)
 		{
 			// Noir
@@ -174,10 +257,14 @@ for(let x = 0; x <8 ; x++)
 			material.color = new THREE.Color(caseColor)
 			
 		}
+		//  Create the mesh of the case and place it in the scene
 		const chessCase = new THREE.Mesh(caseGeo, material)
 		chessCase.position.x = x
 		chessCase.position.z = z 
 		chessCase.material.receiveShadow = true
+		chessCase.material.receiveshadow = true
+
+		//  Give it a data to bea bale to get it position and other things easyli 
 		const caseData = {
 			occuped : false,
 			posX : x,
@@ -193,13 +280,18 @@ for(let x = 0; x <8 ; x++)
 	}
 }
 
+//  Set the gltf loader to load our 3d model of chess pieces
 const loader = new GLTFLoader();
 
 
+//  Create vars for both of the kings because you need to have access to them each round to check if there is a checkmate or not
+let blackKing, whiteKing
 
 
+//  Create a function to init all our pieces for black and white and position on the plate
 const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 {
+	// Create only one material for every pieces and give it to all of them
 	const pieceMaterial = new THREE.MeshPhysicalMaterial( {
 		color: pieceCodeColor,
 		metalness: 0,
@@ -227,9 +319,12 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 	for(let x  = 0; x< 8 ; x ++)
 	{
 
+
+		// Load the models of the piece, give it a material, place them on the palte, give it all the data  and add it to the scene. Globaly repaet the process for every piece and just change the values
 		loader.load( 'chess_pieces/pawn.glb', function ( gltf ) {
 			const pawn = gltf.scene.children[0]
 			pawn.scale.set(0.05, 0.05, 0.05)
+			// down scale them to have them to the right size then get their size in the scene to place the bottom of the piece exactly at the top edge of the chess plate
 			const boundingBox = new THREE.Box3().setFromObject(pawn)
 			const size = boundingBox.getSize()
 			pawn.userData = {
@@ -243,6 +338,7 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 			}
 			pawn.material = pieceMaterial
 			pawn.position.x = x
+			//  Set the good y positon for the piece
 			pawn.position.y = 1 + size.y/2 - 0.49
 			pawn.position.z = pawnPosZ,
 			pawn.type = 'piece'
@@ -326,7 +422,6 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 		leftKnight.position.x = 1
 		leftKnight.position.y =  1 + size.y/2 - 0.49
 		leftKnight.position.z = posZ
-		console.log(leftKnight.rotation)
 		leftKnight.rotation.z += knightRotation
 		leftKnight.type = 'piece'
 		pieceStock.push(leftKnight)
@@ -354,7 +449,6 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 		rightKnight.position.x = 6
 		rightKnight.position.y = 1 + size.y/2 - 0.49
 		rightKnight.position.z = posZ
-		console.log(rightKnight.rotation)
 		rightKnight.rotation.z += knightRotation
 		rightKnight.type = 'piece'
 		pieceStock.push(rightKnight)
@@ -440,7 +534,6 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 	// 	king.position.y = 1 + size.y/2 - 0.49
 	// 	king.position.z = posZ
 	// 	king.type = 'piece'
-	// 	console.log(king)
 	// 	pieceStock.push(king)
 	// 	scene.add(king)
 	// 	chessGroup.add(king)
@@ -458,11 +551,14 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 		piece : 'king',
 		type : 'piece'
 	}
+	if(pieceColor == 'black')
+		blackKing = king
+	if(pieceColor == 'white')
+		whiteKing = king
 	king.position.x = 3
 	king.position.y = 1
 	king.position.z = posZ
 	king.type = 'piece'
-	console.log(king)
 	pieceStock.push(king)
 	scene.add(king)
 	chessGroup.add(king)
@@ -495,51 +591,77 @@ const pieceInit = (pieceColor, posZ, pieceCodeColor, knightRotation) =>
 	})
 }
 
+//  Call our piece init function for balack and white
 pieceInit('black', 0, 0x444444, Math.PI*2)
 pieceInit('white', 7, 0xffffff, Math.PI)
+//  recenter all our objects
 chessGroup.position.x = -3.5
 chessGroup.position.z = -3.5
 scene.add(chessGroup)
 
 //  INTERACTIONS
 
+
+//  Set a raycaster to determine the click on the pieces or on the plate to know which object is hit by the ray 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.maxDistance = cubeSize / 2 
-controls.maxPolarAngle = Math.PI / 2.2
-controls.minDistance = 7
+
+
+//  Orbite controls just to be able to naviguate in the scene if i need
+
+// const controls = new OrbitControls(camera, renderer.domElement);
+// controls.maxDistance = cubeSize / 2 
+// controls.maxPolarAngle = Math.PI / 2.2
+// controls.minDistance = 7
+
+//  Create a Var about the player turn to know wich player has to play 
 let playerTurn = 'white'
+
+// The Loop which manage our animations like the camera that always look at the middle of the scene or lunch the ray in the scene on every frame and render our scene 
 const animate = () =>
 {
 	requestAnimationFrame(animate)
 	renderer.render(scene,camera)
 	raycaster.setFromCamera( mouse, camera )
+	camera.lookAt(0, 0, 0)
 }
 animate()
 
 
 
-
+//  Make a var to know which piece the player clicked on to play
 let pieceSelected = 0
 
+
+
+
+// Listen the click player to knwo what he want to do 
 window.addEventListener('click', (event) =>
 {
+
+	console.clear()
+	//  get our mouse position to know on which element we clicked
 	mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1
 	mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1
 	raycaster.setFromCamera( mouse, camera )
+	//  get all the objects that the ray has it
 	const intersects = raycaster.intersectObjects( chessGroup.children )
 
 
-	
+	//  Stock the first object that the ray hit and stock it in piece selected if the object is a piece
 	if(intersects[0].object.type =='piece')
 	{
 		pieceSelection(intersects[0].object)
 	}
+	else if(pieceSelected != 0)
+	{
+		gsap.to(selectionCyldinder.material, {transmission : 1, duration : 0.3})
+	}
 
-
+	//  If the player has hit a case, it normaly meansd that's he has selected a piece
 	if(intersects[0].object.type == 'case')
 	{
+		//  Call a move function depending of which piece the player has selected
 		if(pieceSelected.userData.piece == 'pawn')
 		{
 			pawnMove(intersects[0].object)
@@ -570,41 +692,77 @@ window.addEventListener('click', (event) =>
 		{
 			kingMove(intersects[0].object)
 		}
+
+		// Reset the selection 
 		if (pieceSelected != 0)
 		{
-			pieceSelected.material.color.set(pieceSelected.userData.colorCode)
 			pieceSelected = 0
 		}
 	}
 })
 
+
+// Shape that show which piece is currently selected ----> SHoudl be like an aura when i'll learn shaders correctly
+const selectionCyldinder = new THREE.Mesh(
+	new THREE.CylinderBufferGeometry(0.4, 0.4, 0.5),
+	new THREE.MeshPhysicalMaterial({
+		color: 0xececec,
+		transmission: 1, // use material.transmission for glass materials
+		opacity: 1, // set material.opacity to 1 when material.transmission is non-zero
+		transparent: true})
+)
+
+selectionCyldinder.position.set(0,3,0)
+scene.add(selectionCyldinder)
+
 const pieceSelection = (object) =>
 {
+	//  If a piece is already selected we deslecte it to select a new one just after
 	if(pieceSelected !=0)
 	{
-		pieceSelected.material.color.set(pieceSelected.userData.colorCode)
 		pieceSelected = 0
+
 	}
+	//  Stock the new selected piece
 	if(pieceSelected == 0 && object.userData.color == playerTurn)
 	{
 		pieceSelected = object
-		pieceSelected.material.color.set(0x00ff00)
+		gsap.to(selectionCyldinder.material, {transmission : 0.2, duration : 0.3, delay : 0.3})
+		gsap.to(selectionCyldinder.position, {x :pieceSelected.userData.posX - 3.5 ,y : 3 ,z :pieceSelected.userData.posZ - 3.5 , duration : 0.3})
+
+		console.log(pieceSelected)
 	}
 }
 
+//  Function to make the turns alternates between the two players
+
+
 const turnAlternate = () =>
 {
+	//  Call the king checkmate function on every round to see if the turn put the king in check or not and make the camera move
+	kingCheckMate(whiteKingCheck)
+	kingCheckMate(blackKingCheck)
+
+	//  Make the truns alternate and animate the camera
 	if(playerTurn == 'white')
 	{
 		playerTurn = 'black'
+		const tl = gsap.timeline()
+		tl.to(camera.position, {z : 0, x : 4, duration : 0.5})
+		.to(camera.position, {z : -5, x : 0,  duration : 0.5, delay : 0.7})
+
 
 	}
 	else if(playerTurn == 'black')
 	{
 		playerTurn = 'white'
+		const tl = gsap.timeline()
+		tl.to(camera.position, {z : 0, x : 4, duration : 0.5})
+		.to(camera.position, {z : 5, x: 0 ,duration : 0.5, delay : 0.7})
+
 	}
 }
-
+//  FUNCTION to know if the case clicked is free for the piece or not
 const caseFree = (caseClicked) =>
 {
 	for(let i  = 0; i< pieceStock.length; i ++)
@@ -622,6 +780,8 @@ const caseFree = (caseClicked) =>
 	return true
 }
 
+
+//  If a piece go on a case occuped by an ennemie piece, the piece eat this one and delete it from the game
 const eatPiece = (caseClicked) =>
 {
 	for(let i  = 0; i< pieceStock.length; i ++)
@@ -634,6 +794,7 @@ const eatPiece = (caseClicked) =>
 	}
 }
 
+//  Special pawn eat function becasue they don't eat like they move
 const pawnEatPiece = (caseClicked) =>
 {
 	for(let i  = 0; i< pieceStock.length; i ++)
@@ -646,7 +807,7 @@ const pawnEatPiece = (caseClicked) =>
 	return false
 }
 
-
+//  All the move function works the same way, Check if the case that's has been clicked is able to reach for the reach, if yes we call the checkmove function to be sure if there is no piece on the way 
 
 const pawnMove = (caseClicked) =>
 {
@@ -665,27 +826,42 @@ const pawnMove = (caseClicked) =>
 		pawnStart = 6
 
 	}
-	if(caseFree(caseClicked) && caseClicked.userData.posZ - pieceSelected.position.z == pawnDirection && caseClicked.userData.posX == pieceSelected.position.x)
+	if(caseClicked.userData.posZ - pieceSelected.position.z == pawnDirection && caseClicked.userData.posX == pieceSelected.position.x)
 	{
-		animationMove(caseClicked)
-		turnAlternate()
+		if(caseClicked.userData.type != 'piece' && caseFree(caseClicked))
+			{
+
+				animationMove(caseClicked)
+				turnAlternate()
+				return true
+			}
 	}
-	else if(caseFree(caseClicked) && caseClicked.userData.posZ  - pieceSelected.position.z == pawnDirection * 2 && pieceSelected.position.z  == pawnStart && caseClicked.userData.posX == pieceSelected.position.x)
+	else if(caseClicked.userData.posZ  - pieceSelected.position.z == pawnDirection * 2 && pieceSelected.position.z  == pawnStart && caseClicked.userData.posX == pieceSelected.position.x)
 	{
-		animationMove(caseClicked)
-		turnAlternate()
+		if(caseClicked.userData.type != 'piece' && caseFree(caseClicked))
+			{
+
+				animationMove(caseClicked)
+				turnAlternate()
+				return true
+			}
 
 	}
 	if(pawnEatPiece(caseClicked) && caseClicked.userData.posZ - pieceSelected.userData.posZ == pawnDirection && pieceSelected.userData.posX - caseClicked.userData.posX == 1 ||
 		pawnEatPiece(caseClicked) && caseClicked.userData.posZ - pieceSelected.userData.posZ == pawnDirection && pieceSelected.userData.posX - caseClicked.userData.posX == -1)
 		{
-			animationMove(caseClicked)
-			eatPiece(caseClicked)
-			turnAlternate()
+			if(caseClicked.userData.type != 'piece' && caseFree(caseClicked))
+			{
+
+				eatPiece(caseClicked)
+				animationMove(caseClicked)
+				turnAlternate()
+				return true
+			}
 		}
 }
 
-
+//  CheckMove functions are used to check if there 's no piece on the piece way
 const rookCheckMove  = (caseClicked) =>
 {
 	// VERTICAL
@@ -758,22 +934,32 @@ const rookCheckMove  = (caseClicked) =>
 // for(let i = 6; i)
 const rookMove = (caseClicked) =>
 {
-	if(caseFree(caseClicked) && pieceSelected.position.x == caseClicked.userData.posX)
+	if(pieceSelected.position.x == caseClicked.userData.posX)
 	{
 		if(rookCheckMove(caseClicked))
 		{
-			eatPiece(caseClicked)
-			animationMove(caseClicked)
-			turnAlternate()
+			if(caseClicked.userData.type != 'piece' && caseFree(caseClicked))
+			{
+
+				eatPiece(caseClicked)
+				animationMove(caseClicked)
+				turnAlternate()
+				return true
+			}
 		}
 	}
-	else if(caseFree(caseClicked) && pieceSelected.position.z == caseClicked.userData.posZ)
+	else if(pieceSelected.position.z == caseClicked.userData.posZ)
 	{
 		if(rookCheckMove(caseClicked))
 		{
-			eatPiece(caseClicked)
-			animationMove(caseClicked)
-			turnAlternate()
+			if(caseClicked.userData.type != 'piece' && caseFree(caseClicked))
+			{
+
+				eatPiece(caseClicked)
+				animationMove(caseClicked)
+				turnAlternate()
+				return true
+			}
 		}
 
 	}
@@ -783,22 +969,32 @@ const rookMove = (caseClicked) =>
 
 const knightMove = (caseClicked) =>
 {
-	if(caseFree(caseClicked) && caseClicked.userData.posX - pieceSelected.userData.posX == 2 || caseFree(caseClicked) && caseClicked.userData.posX - pieceSelected.userData.posX == -2)
+	if(caseClicked.userData.posX - pieceSelected.userData.posX == 2 || caseClicked.userData.posX - pieceSelected.userData.posX == -2)
 	{
 		if(caseClicked.userData.posZ - pieceSelected.userData.posZ == 1 || caseClicked.userData.posZ - pieceSelected.userData.posZ == -1)
 		{
-			eatPiece(caseClicked)
-			animationMove(caseClicked)
-			turnAlternate()
+			if(caseClicked.userData.type != 'piece' && caseFree(caseClicked))
+			{
+
+				eatPiece(caseClicked)
+				animationMove(caseClicked)
+				turnAlternate()
+				return true
+			}
 		}
 	}
-	if(caseFree(caseClicked) && caseClicked.userData.posZ - pieceSelected.userData.posZ == 2 || caseFree(caseClicked) && caseClicked.userData.posZ - pieceSelected.userData.posZ == -2)
+	if(caseClicked.userData.posZ - pieceSelected.userData.posZ == 2 || caseClicked.userData.posZ - pieceSelected.userData.posZ == -2)
 	{
 		if(caseClicked.userData.posX - pieceSelected.userData.posX == 1 || caseClicked.userData.posX - pieceSelected.userData.posX == -1)
 		{
-			eatPiece(caseClicked)
-			animationMove(caseClicked)
-			turnAlternate()
+			if(caseClicked.userData.type != 'piece' && caseFree(caseClicked))
+			{
+
+				eatPiece(caseClicked)
+				animationMove(caseClicked)
+				turnAlternate()
+				return true
+			}
 		}
 	}
 }
@@ -906,16 +1102,21 @@ const bishopCheckMove = (caseClicked) =>
 
 const bishopMove = (caseClicked) =>
 {
-	if(caseFree(caseClicked) && caseClicked.userData.posX - pieceSelected.userData.posX == caseClicked.userData.posZ - pieceSelected.userData.posZ ||
-	caseFree(caseClicked) && -(caseClicked.userData.posX - pieceSelected.userData.posX) == caseClicked.userData.posZ - pieceSelected.userData.posZ ||
-	caseFree(caseClicked) && -(caseClicked.userData.posX - pieceSelected.userData.posX) == -(caseClicked.userData.posZ - pieceSelected.userData.posZ) ||
-	caseFree(caseClicked) && caseClicked.userData.posX - pieceSelected.userData.posX == -(caseClicked.userData.posZ - pieceSelected.userData.posZ) )
+	if(caseClicked.userData.posX - pieceSelected.userData.posX == caseClicked.userData.posZ - pieceSelected.userData.posZ ||
+	-(caseClicked.userData.posX - pieceSelected.userData.posX) == caseClicked.userData.posZ - pieceSelected.userData.posZ ||
+	-(caseClicked.userData.posX - pieceSelected.userData.posX) == -(caseClicked.userData.posZ - pieceSelected.userData.posZ) ||
+	caseClicked.userData.posX - pieceSelected.userData.posX == -(caseClicked.userData.posZ - pieceSelected.userData.posZ) )
 	{
 		if(bishopCheckMove(caseClicked))
 		{
-			eatPiece(caseClicked)
-			animationMove(caseClicked)
-			turnAlternate()
+			if(caseClicked.userData.type != 'piece' && caseFree(caseClicked))
+			{
+
+				eatPiece(caseClicked)
+				animationMove(caseClicked)
+				turnAlternate()
+				return true
+			}
 		}
 	}
 }
@@ -928,15 +1129,17 @@ const queenMove = (caseClicked) =>
 
 const kingMove = (caseClicked) =>
 {
-	if(caseFree(caseClicked) && pieceSelected.userData.posX - caseClicked.userData.posX >= -1 && pieceSelected.userData.posX - caseClicked.userData.posX <= 1 &&
-								pieceSelected.userData.posZ - caseClicked.userData.posZ >= -1 && pieceSelected.userData.posZ - caseClicked.userData.posZ <= 1)
+	if(pieceSelected.userData.posX - caseClicked.userData.posX >= -1 && pieceSelected.userData.posX - caseClicked.userData.posX <= 1 &&
+								pieceSelected.userData.posZ - caseClicked.userData.posZ >= -1 && pieceSelected.userData.posZ - caseClicked.userData.posZ <= 1 && caseFree(caseClicked))
 	{
 		eatPiece(caseClicked)
 		animationMove(caseClicked)
 		turnAlternate()
+		return true
 	}
 }
 
+// Short function to make the pieces animate when they move by using gsap and udpate pieces datas
 const animationMove = (caseClicked) =>
 { 
 	pieceSelected.userData.posZ = caseClicked.userData.posZ 
@@ -945,3 +1148,29 @@ const animationMove = (caseClicked) =>
 	gsap.to(pieceSelected.position, { x : caseClicked.userData.posX, z : caseClicked.userData.posZ, duration : 0.8})
 
 }
+
+
+//  Function to check if the king is in check (Not already fully functinal)
+let whiteKingCheck = {
+	element : whiteKing,
+	isChecked : false,
+	color : 'white'
+}
+let blackKingCheck = {
+	element : blackKing,
+	isChecked : false,
+	color : 'black'
+}
+const kingCheckMate = (king) =>
+{
+	for(let i = 0; i < pieceStock.length; i++)
+	{
+			
+			if(pieceStock[i].userData.piece == 'queen' && pieceStock[i].userData.color != king.color)
+			{
+				
+			}
+		
+	}
+}
+
